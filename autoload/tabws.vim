@@ -42,7 +42,7 @@ function! tabws#gettabforbuffer(buffer)
 	for i in range(tabpagenr('$'))
 		let direntry = s:tabws_directory[i + 1]
 		for bufnum in direntry["buffers"]
-			if str2nr(a:buffer) == bufnum || fnamemodify(bufname(bufnum), ":p:~:.") =~ a:buffer
+			if str2nr(a:buffer) == bufnum || substitute(fnamemodify(bufname(bufnum), ":p:~:."), '~', '\~', '') =~ substitute(a:buffer, '~', '\~', '')
 				return i + 1
 			endif
 		endfor

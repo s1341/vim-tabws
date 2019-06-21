@@ -63,7 +63,12 @@ function! s:tabws_jumptobufferintab(buffer)
 	let tab = tabws#gettabforbuffer(a:buffer)
 	if tab != 0
 		execute tab . 'tabnext'
-		execute "buffer " . a:buffer
+		try
+			execute "buffer " . a:buffer
+		catch /E93/
+			echom "More than one match for " . a:buffer	
+		endtry
+
 	endif
 endfunction
 
