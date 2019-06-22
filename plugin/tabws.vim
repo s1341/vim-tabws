@@ -38,8 +38,7 @@ augroup TabWS
 	autocmd! VimEnter * call s:tabws_vimenter()
 augroup END
 
-command! -nargs=+ CreateWS call s:tabws_createws(<f-args>)
-command! -nargs=1 TabWSSetName call <SID>tabws_settabname(<q-args>)
+command! -nargs=1 TabWSSetName call tabws#settabname(<q-args>)
 command! TabWSBufferList call <SID>tabws_bufferlist()
 command! -nargs=1 -complete=customlist,<SID>tabws_buffernamecomplete TabWSJumpToBuffer call <SID>tabws_jumptobufferintab(<q-args>)
 
@@ -47,6 +46,7 @@ if exists(':Alias')
 	:Alias buffers TabWSBufferList 
 	:Alias ls TabWSBufferList 
 	:Alias buffer TabWSJumpToBuffer 
+	:Alias -range b TabWSJumpToBuffer 
 endif 
 
 
@@ -120,15 +120,19 @@ endfunction
 
 function! s:tabws_tabnewentered()
 	echom "TabNewEntered"
-	call tabws#settabname(tabws#getprojectroot(bufname(tabws#getcurrentbuffer(tabpagenr()))))
+	if tabws#getcurrentbuffer(tabpagenr())
+		call tabws#settabname(tabws#getprojectroot(bufname(tabws#getcurrentbuffer(tabpagenr()))))
+	endif
 
 endfunction
 
 function! s:tabws_tabclosed()
 	echom "TabClosed"
+	call tabws#deletedirectoryentryfortab(tabpagenr())
 endfunction
 
 function! s:tabws_bufenter()
+	echo "BufEnter"
 	call tabws#associatebufferwithtab()
 	call tabws#refreshtabline()
 endfunction

@@ -35,22 +35,38 @@ function! tabws#getcurrentbuffer(tabnum)
 endfunction
 
 function! tabws#createdirectoryentry(tabnum)
+	echom "creating direntry for tab " . a:tabnum
 	let s:tabws_directory[a:tabnum] = {'buffers': []}
 endfunction
 
 function! tabws#gettabforbuffer(buffer)
 	for i in range(tabpagenr('$'))
-		let direntry = s:tabws_directory[i + 1]
-		for bufnum in direntry["buffers"]
-			if str2nr(a:buffer) == bufnum || substitute(fnamemodify(bufname(bufnum), ":p:~:."), '~', '\~', '') =~ substitute(a:buffer, '~', '\~', '')
-				return i + 1
-			endif
-		endfor
+		if has_key(s:tabws_directory, i + 1)
+			let direntry = s:tabws_directory[i + 1]
+			for bufnum in direntry["buffers"]
+				if str2nr(a:buffer) == bufnum || substitute(fnamemodify(bufname(bufnum), ":p:~:."), '~', '\~', '') =~ substitute(a:buffer, '~', '\~', '')
+					return i + 1
+				endif
+			endfor
+		endif
 	endfor
+	return 0
+endfunction
+
+function! tabws#getdirectoryentryfortab(tabnum)
+	if !has_key(s:tabws_directory, a:tabnum) 
+		call tabws#createdirectoryentry(a:tabnum)
+	endif
+	return s:tabws_directory[a:tabnum]
+endfunction
+
+function tabws#deletedirectoryentryfortab(tabnum)
+	call remove(s:tabws_directory, a:tabnum)
 endfunction
 
 function! tabws#getdirectoryentryforbuffer(bufnum)
-	return s:tabws_directory[tabws#gettabforbuffer(a:bufnum)]
+	let tab = tabws#gettabforbuffer(a:bufnum)
+	return tabws#getdirectoryentryfortab(tab)
 endfunction
 
 function! tabws#getbuffersfortab(tabnum)
@@ -65,10 +81,12 @@ function! tabws#getbuffers()
 endfunction
 
 function! tabws#settabname(name)
+	echom string(s:tabws_directory)
+	echom "tabpagenr: " . tabpagenr()
 	if !has_key(s:tabws_directory, tabpagenr())
 		call tabws#createdirectoryentry(tabpagenr())
 	endif
-	let direntry = tabws#getdirectoryentryforbuffer(tabws#getcurrentbuffer(tabpagenr()))
+	let direntry = tabws#getdirectoryentryfortab(tabpagenr())
 	let direntry["name"] = a:name
 	call tabws#refreshtabline()
 endfunction
@@ -95,9 +113,11 @@ function! tabws#associatebufferwithtab(...)
 		call tabws#createdirectoryentry(tabpagenr())
 	endif
 	let direntry = s:tabws_directory[tabpagenr()]
+	"echom "".  string(direntry["buffers"])
 	if index(direntry["buffers"], current_buffer) == -1
 		call add(direntry["buffers"], current_buffer)
 	endif
+	"echom "".  string(direntry["buffers"])
 endfunction
 
 function! tabws#restoretagstack()
