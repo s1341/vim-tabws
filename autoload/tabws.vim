@@ -136,21 +136,16 @@ function! tabws#gettabname(tabnum)
 	return "unnamed"
 endfunction
 
-function! tabws#associatebufferwithtab(...)
-	if a:0 == 1
-		let current_buffer = a:1
-	else
-		let current_buffer = tabws#getcurrentbuffer(tabpagenr())
-	endif
-	if !buflisted(current_buffer) || !filereadable(bufname(current_buffer)) 
+function! tabws#associatebufferwithtab(tab, buffer)
+	if !buflisted(a:buffer) || !filereadable(bufname(a:buffer)) 
 		return
 	endif
-	if !has_key(s:tabws_directory, tabpagenr())
-		call tabws#createdirectoryentry(tabpagenr())
+	if !has_key(s:tabws_directory, a:tab)
+		call tabws#createdirectoryentry(a:tab)
 	endif
-	let direntry = s:tabws_directory[tabpagenr()]
-	if index(direntry["buffers"], current_buffer) == -1
-		call add(direntry["buffers"], current_buffer)
+	let direntry = s:tabws_directory[a:tab]
+	if index(direntry["buffers"], a:buffer) == -1
+		call add(direntry["buffers"], a:buffer)
 	endif
 endfunction
 

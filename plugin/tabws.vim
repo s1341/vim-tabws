@@ -134,7 +134,7 @@ endfunction
 
 function! s:tabws_bufenter()
 	echo "BufEnter"
-	call tabws#associatebufferwithtab()
+	call tabws#associatebufferwithtab(tabpagenr(), tabws#getcurrentbuffer(tabpagenr()))
 	call tabws#refreshtabline()
 endfunction
 
@@ -151,10 +151,31 @@ function! s:tabws_bufnew()
 endfunction
 
 function! s:tabws_vimenter()
-	echom "VimEnter " . tabpagenr()
-	for buffer in range(bufnr('$'))
-		call tabws#associatebufferwithtab(buffer + 1)
+	echom "VimEnter " . tabpagenr(). ': ' . bufnr('$')
+
+	if bufnr('$') >= 1
+	    call tabws#associatebufferwithtab(tabpagenr(), 1)
+	    call tabws#setup_tab(tabpagenr())
+	endif
+	for buffer in range(2,bufnr('$'))
+		let foundtab = 0
+		for tab in range(1, tabpagenr('$'))
+		    echom projectroot#guess(bufname(buffer)). ": " . tabws#getprojectroot(tab)
+		    if projectroot#guess(bufname(buffer)) == tabws#getprojectroot(tab)
+			call tabws#associatebufferwithtab(tab, buffer)
+			let foundtab = 1
+			break
+		    endif
+		endfor
+		echom "foundtab: " . foundtab
+		if foundtab == 0
+		    exec ":tabedit ". bufname(buffer)
+		    call tabws#associatebufferwithtab(tabpagenr('$'), buffer)
+		    call tabws#setup_tab(tabpagenr('$'))
+		    exec ":" . (tabpagenr('$') - 1) . "tabp"
+		endif
 	endfor 
+	call tabws#switchtotab(1)
 endfunction
 let g:tabws_loaded = 1
 
