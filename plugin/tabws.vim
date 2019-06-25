@@ -30,7 +30,7 @@ augroup TabWS
 	autocmd! TabEnter * call s:tabws_tabenter()
 	autocmd! TabLeave * call s:tabws_tableave()
 	autocmd! TabNewEntered * call s:tabws_tabnewentered()
-	autocmd! TabClosed * call s:tabws_tabclosed()
+	autocmd! TabClosed * call s:tabws_tabclosed(expand('<afile>'))
 	autocmd! BufEnter * call s:tabws_bufenter()
 	autocmd! BufCreate * call s:tabws_bufcreate()
 	autocmd! BufAdd * call s:tabws_bufadd()
@@ -49,6 +49,9 @@ if exists(':Alias')
 	:Alias -range b TabWSJumpToBuffer 
 endif 
 
+if exists("*fzf#run")
+    let g:fzf_buffer_function = 'tabws#getbuffers'
+endif
 
 function! s:tabws_buffernamecomplete(ArgLead, CmdLine, CursorPos)
 	let buffers = tabws#getbuffers()
@@ -105,12 +108,12 @@ endfunction
 
 
 function! s:tabws_tabnew()
-	echom "TabNew"
+	echom "TabNew " . tabpagenr()
 endfunction
 
 function! s:tabws_tabenter()
 	echom "TabEnter"
-	call tabws#restoretagstack()
+	call tabws#switchtotab(tabpagenr())
 endfunction
 
 function! s:tabws_tableave()
@@ -119,16 +122,14 @@ function! s:tabws_tableave()
 endfunction
 
 function! s:tabws_tabnewentered()
-	echom "TabNewEntered"
-	if tabws#getcurrentbuffer(tabpagenr())
-		call tabws#settabname(tabws#getprojectroot(bufname(tabws#getcurrentbuffer(tabpagenr()))))
-	endif
-
+	echom "TabNewEntered " . tabpagenr()
+	call tabws#setup_tab(tabpagenr())
+	call tabws#switchtotab(tabpagenr())
 endfunction
 
-function! s:tabws_tabclosed()
-	echom "TabClosed"
-	call tabws#deletedirectoryentryfortab(tabpagenr())
+function! s:tabws_tabclosed(tabnum)
+	echom "TabClosed " . a:tabnum
+	call tabws#deletedirectoryentryfortab(a:tabnum)
 endfunction
 
 function! s:tabws_bufenter()

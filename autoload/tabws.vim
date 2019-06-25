@@ -24,9 +24,45 @@
 
 let s:tabws_directory = {}
 
-function! tabws#getprojectroot(path)
-	return fnamemodify(a:path, ":h")
+function! tabws#getprojectroot(tabnum)
+	let direntry = tabws#getdirectoryentryfortab(a:tabnum)
+	if has_key(direntry, "projectroot")
+		return direntry["projectroot"]
+	endif
+	return ""
 endfunction
+
+function! tabws#setprojectroot(tabnum, projectroot)
+	let direntry = tabws#getdirectoryentryfortab(a:tabnum)
+	let direntry["projectroot"] = a:projectroot
+endfunction
+
+function! tabws#setup_tab(tabnum)
+	if has_key(s:tabws_directory, a:tabnum) && a:tabnum < tabpagenr('$')
+		for tab in range(tabpagenr('$'), a:tabnum + 1, -1)
+			let direntry = tabws#getdirectoryentryfortab(tab - 1)
+			call remove(s:tabws_directory, tab -1)
+			let s:tabws_directory[tab] = direntry
+		endfor
+	endif
+	if !has_key(s:tabws_directory, a:tabnum)
+		call tabws#createdirectoryentry(a:tabnum)
+	endif
+	let current_buffer = tabws#getcurrentbuffer(a:tabnum)
+	if bufname(current_buffer) != ""
+		let projectroot = projectroot#guess(bufname(current_buffer))
+		call tabws#setprojectroot(a:tabnum, projectroot)
+		call tabws#settabname(a:tabnum, fnamemodify(projectroot, ":t"))
+	endif
+endfunction
+
+function! tabws#switchtotab(tabnum)
+	call tabws#restoretagstack()
+	let path = tabws#getprojectroot(a:tabnum)
+	if path != ""
+		execute(":cd " . path)
+	endif
+endfunction 
 
 function! tabws#getcurrentbuffer(tabnum)
 	let window = tabpagewinnr(a:tabnum)
@@ -35,7 +71,6 @@ function! tabws#getcurrentbuffer(tabnum)
 endfunction
 
 function! tabws#createdirectoryentry(tabnum)
-	echom "creating direntry for tab " . a:tabnum
 	let s:tabws_directory[a:tabnum] = {'buffers': []}
 endfunction
 
@@ -61,7 +96,13 @@ function! tabws#getdirectoryentryfortab(tabnum)
 endfunction
 
 function tabws#deletedirectoryentryfortab(tabnum)
-	call remove(s:tabws_directory, a:tabnum)
+	if a:tabnum <= tabpagenr('$') + 1
+		for tabtomove in range(a:tabnum + 1, tabpagenr('$') + 1)
+			let direntry = tabws#getdirectoryentryfortab(tabtomove)
+			call remove(s:tabws_directory, tabtomove)
+			let s:tabws_directory[tabtomove - 1] = direntry
+		endfor
+	endif
 endfunction
 
 function! tabws#getdirectoryentryforbuffer(bufnum)
@@ -80,13 +121,8 @@ function! tabws#getbuffers()
 	return copy(tabws#getbuffersfortab(tabpagenr()))
 endfunction
 
-function! tabws#settabname(name)
-	echom string(s:tabws_directory)
-	echom "tabpagenr: " . tabpagenr()
-	if !has_key(s:tabws_directory, tabpagenr())
-		call tabws#createdirectoryentry(tabpagenr())
-	endif
-	let direntry = tabws#getdirectoryentryfortab(tabpagenr())
+function! tabws#settabname(tabnum, name)
+	let direntry = tabws#getdirectoryentryfortab(a:tabnum)
 	let direntry["name"] = a:name
 	call tabws#refreshtabline()
 endfunction
@@ -113,11 +149,9 @@ function! tabws#associatebufferwithtab(...)
 		call tabws#createdirectoryentry(tabpagenr())
 	endif
 	let direntry = s:tabws_directory[tabpagenr()]
-	"echom "".  string(direntry["buffers"])
 	if index(direntry["buffers"], current_buffer) == -1
 		call add(direntry["buffers"], current_buffer)
 	endif
-	"echom "".  string(direntry["buffers"])
 endfunction
 
 function! tabws#restoretagstack()
@@ -149,7 +183,6 @@ function! TabWSGenerateTabline()
 		let tablinestr .= (tab == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#')
 		let tablinestr .=  ' ' . tab . ': ' . tabname
 	endfor
-	echom tablinestr
 	return tablinestr
 endfunction
 function! tabws#refreshtabline()
