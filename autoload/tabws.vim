@@ -95,7 +95,7 @@ function! tabws#getdirectoryentryfortab(tabnum)
 	return s:tabws_directory[a:tabnum]
 endfunction
 
-function tabws#deletedirectoryentryfortab(tabnum)
+function! tabws#deletedirectoryentryfortab(tabnum)
 	if a:tabnum <= tabpagenr('$') + 1
 		for tabtomove in range(a:tabnum + 1, tabpagenr('$') + 1)
 			let direntry = tabws#getdirectoryentryfortab(tabtomove)
