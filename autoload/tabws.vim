@@ -181,6 +181,8 @@ function! TabWSGenerateTabline()
 	return tablinestr
 endfunction
 function! tabws#refreshtabline()
-	set tabline=%!TabWSGenerateTabline()
+	if get(g:, "airline#extensions#tabline#enabled", 0) == 0
+		set tabline=%!TabWSGenerateTabline()
+	endif
 endfunction
 
