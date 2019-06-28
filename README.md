@@ -12,6 +12,7 @@ In particular, TabWS does the following:
   - Replaces the :buffer command to jump to the buffer in it's existing tab. Autocomplete of buffer names is only from those associated with the current tab.
   - Hooks into [fzf.vim](https://github.com/junegunn/fzf.vim) to make its Buffers command only display buffers from the current tab. (Requires [this](https://github.com/junegunn/fzf.vim/pull/831) pull request).
   - Adds a Tabs fzf command which lists the available tab projects for quick jumping between them.
+  - Integrates with [vim-airline](https://github.com/vim-airline/vim-airline] to provide a pretty tabline (with [this](https://github.com/vim-airline/vim-airline/pull/1938) pull request).
   
 ## Dependencies:
   - unstable neovim (possibly also unstable vim) for settagstack/getstagstack support
