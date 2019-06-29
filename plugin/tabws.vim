@@ -25,6 +25,8 @@ if exists('g:tabws_loaded')
 	finish
 endif 
 
+let s:tabws_vimenterdone = 0
+
 augroup TabWS
 	autocmd! TabNew * call s:tabws_tabnew()
 	autocmd! TabEnter * call s:tabws_tabenter()
@@ -33,14 +35,14 @@ augroup TabWS
 	autocmd! TabClosed * call s:tabws_tabclosed(expand('<afile>'))
 	autocmd! BufEnter * call s:tabws_bufenter()
 	autocmd! BufCreate * call s:tabws_bufcreate()
-	autocmd! BufAdd * call s:tabws_bufadd()
-	autocmd! BufNew * call s:tabws_bufnew()
+	autocmd! BufAdd * call s:tabws_bufadd(expand('<afile>'))
+	autocmd! BufNew * call s:tabws_bufnew(expand('<afile>'))
 	autocmd! VimEnter * call s:tabws_vimenter()
 augroup END
 
 command! -nargs=1 TabWSSetName call tabws#settabname(<q-args>)
 command! TabWSBufferList call <SID>tabws_bufferlist()
-command! -nargs=1 -complete=customlist,<SID>tabws_buffernamecomplete TabWSJumpToBuffer call <SID>tabws_jumptobufferintab(<q-args>)
+command! -nargs=1 -complete=customlist,<SID>tabws_buffernamecomplete TabWSJumpToBuffer call tabws#jumptobufferintab(<q-args>)
 
 if exists(':Alias')
 	:Alias buffers TabWSBufferList 
@@ -62,18 +64,6 @@ function! s:tabws_buffernamecomplete(ArgLead, CmdLine, CursorPos)
 	return buffernames
 endfunction
 
-function! s:tabws_jumptobufferintab(buffer)
-	let tab = tabws#gettabforbuffer(a:buffer)
-	if tab != 0
-		execute tab . 'tabnext'
-		try
-			execute "buffer " . a:buffer
-		catch /E93/
-			echom "More than one match for " . a:buffer	
-		endtry
-
-	endif
-endfunction
 
 function! s:tabws_bufferlist()
 	let buffers = tabws#getbuffers()
@@ -114,6 +104,7 @@ endfunction
 function! s:tabws_tabenter()
 	echom "TabEnter"
 	call tabws#switchtotab(tabpagenr())
+	call tabws#refreshtabline()
 endfunction
 
 function! s:tabws_tableave()
@@ -133,21 +124,26 @@ function! s:tabws_tabclosed(tabnum)
 endfunction
 
 function! s:tabws_bufenter()
-	echo "BufEnter"
-	call tabws#associatebufferwithtab(tabpagenr(), tabws#getcurrentbuffer(tabpagenr()))
-	call tabws#refreshtabline()
+	echo "BufEnter " . bufnr('%')
+	"call tabws#associatebufferwithtab(tabpagenr(), tabws#getcurrentbuffer(tabpagenr()))
+	if s:tabws_vimenterdone == 1
+		let tab =  tabws#setup_buffer(bufnr('%'))
+		if tab != -1 && tab != tabpagenr()
+			call tabws#jumptobufferintab(bufnr('%'))
+		endif
+	endif 
 endfunction
 
 function! s:tabws_bufcreate()
-	echom "BufCreate " . tabpagenr()
+	echom "BufCreate " . tabpagenr() . " " . bufname(tabws#getcurrentbuffer(tabpagenr()))
 endfunction
 
-function! s:tabws_bufadd()
+function! s:tabws_bufadd(bufnum)
 	echom "BufAdd " . tabpagenr()
 endfunction
 
-function! s:tabws_bufnew()
-	echom "BufNew " . tabpagenr()
+function! s:tabws_bufnew(bufnum)
+	echom "BufNew " . tabpagenr() . " " . a:bufnum . " " . bufname(a:bufnum)
 endfunction
 
 function! s:tabws_vimenter()
@@ -157,25 +153,12 @@ function! s:tabws_vimenter()
 	    call tabws#associatebufferwithtab(tabpagenr(), 1)
 	    call tabws#setup_tab(tabpagenr())
 	endif
+
 	for buffer in range(2,bufnr('$'))
-		let foundtab = 0
-		for tab in range(1, tabpagenr('$'))
-		    echom projectroot#guess(bufname(buffer)). ": " . tabws#getprojectroot(tab)
-		    if projectroot#guess(bufname(buffer)) == tabws#getprojectroot(tab)
-			call tabws#associatebufferwithtab(tab, buffer)
-			let foundtab = 1
-			break
-		    endif
-		endfor
-		echom "foundtab: " . foundtab
-		if foundtab == 0
-		    exec ":tabedit ". bufname(buffer)
-		    call tabws#associatebufferwithtab(tabpagenr('$'), buffer)
-		    call tabws#setup_tab(tabpagenr('$'))
-		    exec ":" . (tabpagenr('$') - 1) . "tabp"
-		endif
+		call tabws#setup_buffer(buffer)
 	endfor 
-	call tabws#switchtotab(1)
+	exec ":1tabn"
+	let s:tabws_vimenterdone = 1
 endfunction
 let g:tabws_loaded = 1
 

@@ -56,6 +56,44 @@ function! tabws#setup_tab(tabnum)
 	endif
 endfunction
 
+function! tabws#jumptobufferintab(buffer)
+	let tab = tabws#gettabforbuffer(a:buffer)
+	if tab != 0
+		exec ":" . tab . 'tabnext'
+		try
+			exec ":buffer " . a:buffer
+		catch /E93/
+			echom "More than one match for " . a:buffer	
+		endtry
+
+	endif
+endfunction
+
+function! tabws#findtabbyprojectroot(projectroot)
+	for tab in range(1, tabpagenr('$'))
+	    	if a:projectroot == tabws#getprojectroot(tab)
+			return tab
+	    	endif
+	endfor
+	return -1
+endfunction
+
+function! tabws#setup_buffer(bufnum)
+	if bufname(a:bufnum) == ""
+		return -1
+	endif
+	let tab = tabws#findtabbyprojectroot(projectroot#guess(fnamemodify(bufname(a:bufnum), ":p:~:.")))
+	if tab == -1
+	    	exec ":tabedit ". bufname(a:bufnum)
+	    	call tabws#associatebufferwithtab(tabpagenr('$'), a:bufnum)
+	    	call tabws#setup_tab(tabpagenr('$'))
+		return tabpagenr('$')
+	else
+		call tabws#associatebufferwithtab(tab, a:bufnum)
+	endif
+	return tab
+endfunction
+
 function! tabws#switchtotab(tabnum)
 	call tabws#restoretagstack()
 	let path = tabws#getprojectroot(a:tabnum)
