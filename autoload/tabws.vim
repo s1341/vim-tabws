@@ -224,3 +224,16 @@ function! tabws#refreshtabline()
 	endif
 endfunction
 
+function! tabws#fzftabssink(line)
+    let pair = split(a:line, ' ')
+    let cmd = pair[0].'gt'
+    execute 'normal' cmd
+endfunction
+
+function! tabws#fzftabs()
+	call fzf#run({
+\   'source':  reverse(map(range(1, tabpagenr('$')), 'v:val." "." ".tabws#gettabname(v:val)')),
+\   'sink':    function('tabws#fzftabssink'),
+\   'down':    tabpagenr('$') + 2
+\ })
+endfunction

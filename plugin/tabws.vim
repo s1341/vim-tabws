@@ -98,33 +98,33 @@ endfunction
 
 
 function! s:tabws_tabnew()
-	echom "TabNew " . tabpagenr()
+	"echom "TabNew " . tabpagenr()
 endfunction
 
 function! s:tabws_tabenter()
-	echom "TabEnter"
+	"echom "TabEnter"
 	call tabws#switchtotab(tabpagenr())
 	call tabws#refreshtabline()
 endfunction
 
 function! s:tabws_tableave()
-	echom "TabLeave"
+	"echom "TabLeave"
 	call tabws#savetagstack()
 endfunction
 
 function! s:tabws_tabnewentered()
-	echom "TabNewEntered " . tabpagenr()
+	"echom "TabNewEntered " . tabpagenr()
 	call tabws#setup_tab(tabpagenr())
 	call tabws#switchtotab(tabpagenr())
 endfunction
 
 function! s:tabws_tabclosed(tabnum)
-	echom "TabClosed " . a:tabnum
+	"echom "TabClosed " . a:tabnum
 	call tabws#deletedirectoryentryfortab(a:tabnum)
 endfunction
 
 function! s:tabws_bufenter()
-	echo "BufEnter " . bufnr('%')
+	"echom "BufEnter " . bufnr('%')
 	"call tabws#associatebufferwithtab(tabpagenr(), tabws#getcurrentbuffer(tabpagenr()))
 	if s:tabws_vimenterdone == 1
 		let tab =  tabws#setup_buffer(bufnr('%'))
@@ -135,19 +135,19 @@ function! s:tabws_bufenter()
 endfunction
 
 function! s:tabws_bufcreate()
-	echom "BufCreate " . tabpagenr() . " " . bufname(tabws#getcurrentbuffer(tabpagenr()))
+	"echom "BufCreate " . tabpagenr() . " " . bufname(tabws#getcurrentbuffer(tabpagenr()))
 endfunction
 
 function! s:tabws_bufadd(bufnum)
-	echom "BufAdd " . tabpagenr()
+	"echom "BufAdd " . tabpagenr()
 endfunction
 
 function! s:tabws_bufnew(bufnum)
-	echom "BufNew " . tabpagenr() . " " . a:bufnum . " " . bufname(a:bufnum)
+	"echom "BufNew " . tabpagenr() . " " . a:bufnum . " " . bufname(a:bufnum)
 endfunction
 
 function! s:tabws_vimenter()
-	echom "VimEnter " . tabpagenr(). ': ' . bufnr('$')
+	"echom "VimEnter " . tabpagenr(). ': ' . bufnr('$')
 
 	if bufnr('$') >= 1
 	    call tabws#associatebufferwithtab(tabpagenr(), 1)
