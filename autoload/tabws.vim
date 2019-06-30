@@ -37,6 +37,12 @@ function! tabws#setprojectroot(tabnum, projectroot)
 	let direntry["projectroot"] = a:projectroot
 endfunction
 
+function! tabws#getcurrentbuffer(tabnum)
+	let window = tabpagewinnr(a:tabnum)
+	let bufferlist = tabpagebuflist()
+	return bufferlist[window - 1]
+endfunction 
+
 function! tabws#setup_tab(tabnum)
 	if has_key(s:tabws_directory, a:tabnum) && a:tabnum < tabpagenr('$')
 		for tab in range(tabpagenr('$'), a:tabnum + 1, -1)
@@ -58,6 +64,7 @@ endfunction
 
 function! tabws#jumptobufferintab(buffer)
 	let tab = tabws#gettabforbuffer(a:buffer)
+	"echom "jumping to buffer " . a:buffer . "in tab: " . tab
 	if tab != 0
 		exec ":" . tab . 'tabnext'
 		try
@@ -67,6 +74,11 @@ function! tabws#jumptobufferintab(buffer)
 		endtry
 
 	endif
+endfunction
+
+function! tabws#jumptotab(tab)
+	exec ":" . a:tab . "tabnext"
+	exec ":buffer " . tabws#getcurrentbufferfortab(a:tab)
 endfunction
 
 function! tabws#findtabbyprojectroot(projectroot)
@@ -83,18 +95,22 @@ function! tabws#setup_buffer(bufnum)
 		return -1
 	endif
 	let tab = tabws#findtabbyprojectroot(projectroot#guess(fnamemodify(bufname(a:bufnum), ":p:~:.")))
+	"echom "found tab by project root: " . tab . " for bufname: " . fnamemodify(bufname(a:bufnum), ":p:~:.")
 	if tab == -1
 	    	exec ":tabedit ". bufname(a:bufnum)
-	    	call tabws#associatebufferwithtab(tabpagenr('$'), a:bufnum)
 	    	call tabws#setup_tab(tabpagenr('$'))
+	    	call tabws#associatebufferwithtab(tabpagenr('$'), a:bufnum)
+		call tabws#setcurrentbufferfortab(tabpagenr('$'), a:bufnum)
 		return tabpagenr('$')
 	else
 		call tabws#associatebufferwithtab(tab, a:bufnum)
 	endif
+	call tabws#setcurrentbufferfortab(tab, a:bufnum)
 	return tab
 endfunction
 
 function! tabws#switchtotab(tabnum)
+	"echom "switching to tab " . a:tabnum
 	call tabws#restoretagstack()
 	let path = tabws#getprojectroot(a:tabnum)
 	if path != ""
@@ -102,23 +118,27 @@ function! tabws#switchtotab(tabnum)
 	endif
 endfunction 
 
-function! tabws#getcurrentbuffer(tabnum)
-	let window = tabpagewinnr(a:tabnum)
-	let bufferlist = tabpagebuflist()
-	return bufferlist[window - 1]
+function! tabws#getcurrentbufferfortab(tabnum)
+	let direntry = tabws#getdirectoryentryfortab(a:tabnum)
+	return direntry['current_buffer']
+endfunction
+
+function! tabws#setcurrentbufferfortab(tabnum, bufnum)
+	let direntry = tabws#getdirectoryentryfortab(a:tabnum)
+	let direntry['current_buffer'] = a:bufnum
 endfunction
 
 function! tabws#createdirectoryentry(tabnum)
-	let s:tabws_directory[a:tabnum] = {'buffers': []}
+	let s:tabws_directory[a:tabnum] = {'buffers': [], 'current_buffer': 0}
 endfunction
 
 function! tabws#gettabforbuffer(buffer)
-	for i in range(tabpagenr('$'))
-		if has_key(s:tabws_directory, i + 1)
-			let direntry = s:tabws_directory[i + 1]
+	for i in range(1, tabpagenr('$'))
+		if has_key(s:tabws_directory, i)
+			let direntry = s:tabws_directory[i]
 			for bufnum in direntry["buffers"]
 				if str2nr(a:buffer) == bufnum || substitute(fnamemodify(bufname(bufnum), ":p:~:."), '~', '\~', '') =~ substitute(a:buffer, '~', '\~', '')
-					return i + 1
+					return i
 				endif
 			endfor
 		endif
@@ -226,8 +246,8 @@ endfunction
 
 function! tabws#fzftabssink(line)
     let pair = split(a:line, ' ')
-    let cmd = pair[0].'gt'
-    execute 'normal' cmd
+    "call tabws#jumptobufferintab(tabws#getcurrentbuffer(pair[0]))
+    call tabws#jumptotab(pair[0])
 endfunction
 
 function! tabws#fzftabs()

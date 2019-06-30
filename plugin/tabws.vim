@@ -1,4 +1,3 @@
-" Copyright (c) 2017 Junegunn Choi
 "
 " MIT License
 
@@ -110,6 +109,7 @@ endfunction
 function! s:tabws_tableave()
 	"echom "TabLeave"
 	call tabws#savetagstack()
+	call tabws#setcurrentbufferfortab(tabpagenr(), bufnr('%'))
 endfunction
 
 function! s:tabws_tabnewentered()
@@ -128,8 +128,9 @@ function! s:tabws_bufenter()
 	"call tabws#associatebufferwithtab(tabpagenr(), tabws#getcurrentbuffer(tabpagenr()))
 	if s:tabws_vimenterdone == 1
 		let tab =  tabws#setup_buffer(bufnr('%'))
-		if tab != -1 && tab != tabpagenr()
-			call tabws#jumptobufferintab(bufnr('%'))
+		if tab != -1
+			call tabws#jumptotab(tab)
+			call tabws#switchtotab(tab)
 		endif
 	endif 
 endfunction
@@ -139,11 +140,11 @@ function! s:tabws_bufcreate()
 endfunction
 
 function! s:tabws_bufadd(bufnum)
-	"echom "BufAdd " . tabpagenr()
+	"echom "BufAdd " . tabpagenr() . " " . bufnr(a:bufnum) . " " . bufname(a:bufnum)
 endfunction
 
 function! s:tabws_bufnew(bufnum)
-	"echom "BufNew " . tabpagenr() . " " . a:bufnum . " " . bufname(a:bufnum)
+	"echom "BufNew " . tabpagenr() . " " . bufnr(a:bufnum) . " " . bufname(a:bufnum)
 endfunction
 
 function! s:tabws_vimenter()
@@ -152,6 +153,7 @@ function! s:tabws_vimenter()
 	if bufnr('$') >= 1
 	    call tabws#associatebufferwithtab(tabpagenr(), 1)
 	    call tabws#setup_tab(tabpagenr())
+	    call tabws#setcurrentbufferfortab(tabpagenr(), bufnr('%'))
 	endif
 
 	for buffer in range(2,bufnr('$'))
@@ -159,6 +161,7 @@ function! s:tabws_vimenter()
 	endfor 
 	exec ":1tabn"
 	let s:tabws_vimenterdone = 1
+	call tabws#switchtotab(1)
 endfunction
 let g:tabws_loaded = 1
 
