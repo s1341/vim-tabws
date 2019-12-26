@@ -22,7 +22,7 @@
 
 if exists('g:tabws_loaded')
 	finish
-endif 
+endif
 
 let s:tabws_vimenterdone = 0
 
@@ -42,17 +42,26 @@ augroup END
 command! -nargs=1 TabWSSetName call tabws#settabname(<q-args>)
 command! TabWSBufferList call <SID>tabws_bufferlist()
 command! -nargs=1 -complete=customlist,<SID>tabws_buffernamecomplete TabWSJumpToBuffer call tabws#jumptobufferintab(<q-args>)
+command! -nargs=* -complete=file TabWSEdit call <SID>tabws_edit(<q-args>)
 
 if exists(':Alias')
-	:Alias buffers TabWSBufferList 
-	:Alias ls TabWSBufferList 
-	:Alias buffer TabWSJumpToBuffer 
-	:Alias -range b TabWSJumpToBuffer 
-endif 
+	:Alias buffers TabWSBufferList
+	:Alias ls TabWSBufferList
+	:Alias buffer TabWSJumpToBuffer
+	:Alias -range b TabWSJumpToBuffer
+	:Alias tabe TabWSEdit
+	:Alias tabed TabWSEdit
+	:Alias tabedi TabWSEdit
+	:Alias tabedit TabWSEdit
+endif
 
 if exists("*fzf#run")
     let g:fzf_buffer_function = 'tabws#getbuffers'
 endif
+
+function! s:tabws_edit(...)
+    exec ":edit " . join(a:000, " ")
+endfunction
 
 function! s:tabws_buffernamecomplete(ArgLead, CmdLine, CursorPos)
 	let buffers = tabws#getbuffers()
@@ -77,16 +86,16 @@ function! s:tabws_bufferlist()
 		if bufwinnr(buffer) != -1
 			let mode .= "a"
 		elseif bufloaded(buffer)
-			let mode .= "h"	
+			let mode .= "h"
 		endif
 		let modified = ''
 		if getbufvar(buffer, '&modified')
 			let modified = '+'
-		endif 
+		endif
 		let line = 'line 0'
 		if bufloaded(buffer)
 			let line = 'line ' . trim(execute("let buf=bufnr('%') | exec '" . buffer . "bufdo echo '''' . line(''.'')' | exec 'b' buf"))
-		endif 
+		endif
 		let name = ' "' . fnamemodify(bufname(buffer), ":p:~:.") . '"'
 		let outputline = printf("%3s%3s%2s%2s", buffer, mode, modified, name)
 		let outputline .= s:prepad(line, 45 - len(outputline), ' ')
@@ -132,7 +141,7 @@ function! s:tabws_bufenter()
 			call tabws#jumptotab(tab)
 			call tabws#switchtotab(tab)
 		endif
-	endif 
+	endif
 endfunction
 
 function! s:tabws_bufcreate()
@@ -158,7 +167,7 @@ function! s:tabws_vimenter()
 
 	for buffer in range(2,bufnr('$'))
 		call tabws#setup_buffer(buffer)
-	endfor 
+	endfor
 	exec ":1tabn"
 	let s:tabws_vimenterdone = 1
 	call tabws#switchtotab(1)

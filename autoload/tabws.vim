@@ -52,9 +52,11 @@ function! tabws#setup_tab(tabnum)
 		endfor
 	endif
 	if !has_key(s:tabws_directory, a:tabnum)
+		"echom "creating direntry for tab " . a:tabnum
 		call tabws#createdirectoryentry(a:tabnum)
 	endif
 	let current_buffer = tabws#getcurrentbuffer(a:tabnum)
+	"echom "setup_tab " . a:tabnum . " : buffer " . current_buffer . " bufname: " . bufname(current_buffer)
 	if bufname(current_buffer) != ""
 		let projectroot = projectroot#guess(bufname(current_buffer))
 		call tabws#setprojectroot(a:tabnum, projectroot)
@@ -91,11 +93,11 @@ function! tabws#findtabbyprojectroot(projectroot)
 endfunction
 
 function! tabws#setup_buffer(bufnum)
-	if bufname(a:bufnum) == ""
+	if bufname(a:bufnum) == "" || &buftype != ""
 		return -1
 	endif
-	let tab = tabws#findtabbyprojectroot(projectroot#guess(fnamemodify(bufname(a:bufnum), ":p:~:.")))
-	"echom "found tab by project root: " . tab . " for bufname: " . fnamemodify(bufname(a:bufnum), ":p:~:.")
+	let tab = tabws#findtabbyprojectroot(projectroot#guess(resolve(expand(fnamemodify(bufname(a:bufnum), ":p:~:.")))))
+	"echom "found tab by project root: " . tab . " for bufname: " . resolve(expand(fnamemodify(bufname(a:bufnum), ":p:~:.")))
 	if tab == -1
 	    	exec ":tabedit ". bufname(a:bufnum)
 	    	call tabws#setup_tab(tabpagenr('$'))
